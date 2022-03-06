@@ -2,15 +2,15 @@ extern crate lp_modeler;
 
 use lp_modeler::solvers::{CbcSolver, SolverTrait};
 use lp_modeler::dsl::*;
-//use lp_modeler::constraint;
+use lp_modeler::constraint;
 use lp_modeler::dsl::variables::lp_sum;
 
 
 fn main() {
     // Define problem variables
-    let wanted_freq = 0.3; // gewuenschte Variantenfrequenz
-    let genloci = 21; //Anzahl der Genloci
-    let numberofvariants = 15;
+    let wanted_freq = 0.03; // gewuenschte Variantenfrequenz
+    let genloci = 500; //Anzahl der Genloci
+    let numberofvariants = 300;
     let mut v = Vec::with_capacity(numberofvariants);
 
     //Vector der Binäries
@@ -18,9 +18,10 @@ fn main() {
         v.push(LpBinary::new(&("x".to_owned()+&i.to_string())));
     }
 
-    //println!("{:?}", v); //Inhalt des Vectors
+        //println!("{:?}", v); //Inhalt des Vectors
 
     let ref actual_freq = LpContinuous::new("d");
+
     // Define problem and objective sense
     let mut problem = LpProblem::new("One Problem", LpObjective::Minimize);
 
@@ -29,7 +30,9 @@ fn main() {
 
     // Constraint:
     problem += lp_sum(&v).equal(actual_freq*genloci);
-
+    
+    problem += constraint!(actual_freq - wanted_freq >= 0);
+ 
     // Specify solver
     let solver = CbcSolver::new();
 
