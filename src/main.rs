@@ -1,17 +1,36 @@
 extern crate lp_modeler;
+//use crate::rust_htslib::bcf::{Reader, Read};
 
 use lp_modeler::solvers::{CbcSolver, SolverTrait};
 use lp_modeler::dsl::*;
 use lp_modeler::constraint;
 use lp_modeler::dsl::variables::lp_sum;
+use lp_modeler::solvers::Solution;
+use rust_htslib::bcf::Reader;
+use rust_htslib::bcf::Read;
+use std::convert::TryFrom;
 
 
 fn main() {
     // Define problem variables
-    let wanted_freq = 0.03; // gewuenschte Variantenfrequenz
-    let genloci = 500; //Anzahl der Genloci
-    let numberofvariants = 300;
+
+    //Number of Loci from the vcf containing all Entries of Chr21
+    let path = &"Rohdaten/only21.vcf";
+    let mut all21 = Reader::from_path(path).expect("Error opening file.");
+    let genloci = all21.records().count() as i32;
+    println!("{}", genloci);
+
+    //Numberofvariants from the vcf filtered by the bed file
+    /*let second_path = &"Rohdaten/filtered.vcf";
+    let mut filtered = Reader::from_path(second_path).expect("Error opening file.");
+    let variants_count = filtered.records().count();
+    let mut v = Vec::with_capacity(variants_count);
+    let numberofvariants = variants_count as i32;
+    println! ("{}", numberofvariants);*/
+    //let numberofvariants = 57648;
+    let numberofvariants = 5000;    
     let mut v = Vec::with_capacity(numberofvariants);
+    let wanted_freq = 0.03; // gewuenschte Variantenfrequenz
 
     //Vector der Binäries
     for i in 0..numberofvariants {
@@ -39,11 +58,20 @@ fn main() {
     // Run optimisation and process output hashmap
     match solver.run(&problem) {
         Ok(solution) => {
-            println!("Status {:?}", solution.status);
+            variantselection(solution);
+            /*println!("Status {:?}", solution.status);
             for (name, value) in solution.results.iter() {
                 println!("value of {} = {}", name, value);
-            }
+            }*/
         },
         Err(msg) => println!("{}", msg),
     }
+}
+
+fn variantselection(solution: Solution){
+    println!("in der Funktion");
+    println!("Status {:?}", solution.status);
+    for (name, value) in solution.results.iter() {
+        //println!("value of {} = {}", name, value);
+    } 
 }
