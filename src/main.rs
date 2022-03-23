@@ -6,9 +6,7 @@ use lp_modeler::dsl::*;
 use lp_modeler::constraint;
 use lp_modeler::dsl::variables::lp_sum;
 use lp_modeler::solvers::Solution;
-use rust_htslib::bcf::Reader;
-use rust_htslib::bcf::Read;
-use std::convert::TryFrom;
+use rust_htslib::bcf::*;
 
 
 fn main() {
@@ -28,9 +26,9 @@ fn main() {
     let numberofvariants = variants_count as i32;
     println! ("{}", numberofvariants);*/
     //let numberofvariants = 57648;
-    let numberofvariants = 5000;    
+    let numberofvariants = 500;    
     let mut v = Vec::with_capacity(numberofvariants);
-    let wanted_freq = 0.03; // gewuenschte Variantenfrequenz
+    let wanted_freq = 0.035; // gewuenschte Variantenfrequenz
 
     //Vector der Binäries
     for i in 0..numberofvariants {
@@ -59,10 +57,6 @@ fn main() {
     match solver.run(&problem) {
         Ok(solution) => {
             variantselection(solution);
-            /*println!("Status {:?}", solution.status);
-            for (name, value) in solution.results.iter() {
-                println!("value of {} = {}", name, value);
-            }*/
         },
         Err(msg) => println!("{}", msg),
     }
@@ -71,7 +65,35 @@ fn main() {
 fn variantselection(solution: Solution){
     println!("in der Funktion");
     println!("Status {:?}", solution.status);
-    for (name, value) in solution.results.iter() {
-        //println!("value of {} = {}", name, value);
-    } 
+    let mut sorted: Vec<_> = solution.results.iter().collect();
+    sorted.sort_by_key(|a| a.0);
+    let mut index = 0;
+    let third_path = &"Rohdaten/only21.vcf.gz";
+    let vcf = IndexedReader::from_path(third_path).expect("Error opening file.");
+    
+    // creating the output vcf
+    let head = createheader();
+    let mut output = Writer::from_stdout(&head, true, Format::Vcf).unwrap();
+
+    // loop over sorted vector.
+    for (key, value) in sorted.iter() {
+       // println!("KEY, VALUE: {} {}", key, value);
+       if **value == 1.0 {
+           
+       }
+              index += 1;
+    }
+    println!("{}", index);
+}
+
+
+//creates the Header for the output vcf
+fn createheader() -> Header {
+    let mut header = Header::new();
+    let header_contig_line = r#"##contig=<ID=1,length=10>"#;
+    header.push_record(header_contig_line.as_bytes());
+    let header_gt_line = r#"##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">"#;
+    header.push_record(header_gt_line.as_bytes());
+    header.push_sample("test_sample".as_bytes());
+    header
 }
