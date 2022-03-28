@@ -13,21 +13,31 @@ use rust_htslib::bcf::record::GenotypeAllele;
 fn main() {
     // Define problem variables
 
-    //Number of Loci from the vcf containing all Entries of Chr21
+    /*//Number of Loci from the vcf containing all Entries of Chr21
     let path = &"Rohdaten/only21.vcf";
     let mut all21 = Reader::from_path(path).expect("Error opening file.");
     let genloci = all21.records().count() as i32;
-    println!("{}", genloci);
+    println!("{}", genloci);*/
 
-    //Numberofvariants from the vcf filtered by the bed file
-    /*let second_path = &"Rohdaten/filtered.vcf";
-    let mut filtered = Reader::from_path(second_path).expect("Error opening file.");
-    let variants_count = filtered.records().count();
-    let mut v = Vec::with_capacity(variants_count);
-    let numberofvariants = variants_count as i32;
-    println! ("{}", numberofvariants);*/
-    //let numberofvariants = 57648;
-    let numberofvariants = 2000;    
+    //Numberofvariants from the vcf for CHM1
+    let second_path = &"Rohdaten/only21.vcf";
+    let mut to_filter = Reader::from_path(second_path).expect("Error opening file.");
+    let mut genloci = 0; 
+    for gta in to_filter.records(){
+        let mut record = gta.expect("Fail to read record");
+        let gts = record.genotypes().expect("Error reading genotypes");
+        let geno = gts.get(0);
+        match geno[0].index(){
+            Some(1) => genloci += 1,
+            Some(_) => continue,
+            None => continue
+        };
+
+    }
+    println! ("{}", genloci);   
+    //let numberofvariants = genloci;  //Stackoverflow with this Number of variants
+    let numberofvariants = 5000;
+    let genloci = genloci as f32; //convert from usize
     let mut v = Vec::with_capacity(numberofvariants);
     let wanted_freq = 0.035; // gewuenschte Variantenfrequenz
 
@@ -70,9 +80,11 @@ fn variantselection(solution: Solution){
     println!("Status {:?}", solution.status);
     let mut sorted: Vec<_> = solution.results.iter().collect();
     sorted.sort_by_key(|a| a.0);
-    let mut index = 0;
+
+    //IndexedReader for fetching
     let third_path = &"Rohdaten/only21.vcf.gz";
     let mut vcf = IndexedReader::from_path(third_path).expect("Error opening file.");
+    //let mut to_fetch_from = IndexedReader::from_path(third_path).expect("Error opening file.");
     
     // creating the output vcf
     let head = createheader();
@@ -80,42 +92,45 @@ fn variantselection(solution: Solution){
     //Entries that a written into the output
     let mut entries = output.empty_record();
     //Select the entries from the original vcf
-    for coluum in vcf.records(){
-        let mut coluum = match coluum {
-            Ok(col) => col,
-            Err(error) => panic!("Problem with coluum: {:?}", error)
-        };
+    let mut index = 0;
+    for line in vcf.records() {
+        //println!("{:?}", sorted[index]);
+        let mut coluum = line.expect("Problem with coluum");
+        let genotypes =  coluum.genotypes().expect("Error reading genotypes");
+        let allel_var = genotypes.get(0);
+        if allel_var[0] != rust_htslib::bcf::record::GenotypeAllele::Unphased(1) {
+            continue;
+        }
+        if *sorted[index].1 == 1.0 {
+            let rid = output.header().name2rid(b"21").unwrap(); //still hardcodes b"21"
+            entries.set_rid(Some(rid));
+            entries.set_pos(coluum.pos());
+            entries.set_alleles(&coluum.alleles()).expect("Failed to set alleles");
+            let alleles = &[allel_var[0], allel_var[1]];
+            entries.push_genotypes(alleles).unwrap(); 
+            output.write(&entries).expect("Problem with writing");           
+       }
+              index += 1;
+              //For now because it wont work with the full number of variants
+              if index >= sorted.len(){
+                  break;
+              }
+    }
+    
+    /*Proof of concept for the writer
+    for line in vcf.records(){
+        let mut coluum = line.expect("Problem with coluum");
         let rid = output.header().name2rid(b"21").unwrap(); //still hardcodes b"21"
-        /*let rid = match coluum.rid(){
-            Some(rid) => rid,
-            none => panic!("Kein rid")
-        };*/
+        /*let rid = coluum.rid().expect("Kein rid");*/
         entries.set_rid(Some(rid));
         entries.set_pos(coluum.pos());
 
-        let genotypes = match coluum.genotypes(){
-            Ok(gen) => gen,
-            Err(error) => panic!("Problem with genotype: {:?}", error)
-        };
+        let genotypes =  coluum.genotypes().expect("Error reading genotypes");
         let allel_var = genotypes.get(0);
         let alleles = &[allel_var[0], allel_var[1]];
         entries.push_genotypes(alleles).unwrap(); 
         output.write(&entries).unwrap();
-    }
-    // loop over sorted vector.
-   /* for (key, value) in sorted.iter() {
-       // println!("KEY, VALUE: {} {}", key, value);
-       if **value == 1.0 {
-            let allel = vcf.fetch(index, 0, None);
-            let allel = match allel {
-                Ok(file) => file,
-                Err(error) => panic!("Problem opening the file: {:?}", error),
-        };
-           
-       }
-              index += 1;
     }*/
-    println!("{}", index);
 }
 
 
