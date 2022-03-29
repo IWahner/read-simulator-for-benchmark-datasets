@@ -7,7 +7,6 @@ use lp_modeler::constraint;
 use lp_modeler::dsl::variables::lp_sum;
 use lp_modeler::solvers::Solution;
 use rust_htslib::bcf::*;
-use rust_htslib::bcf::record::GenotypeAllele;
 
 
 fn main() {
@@ -24,22 +23,22 @@ fn main() {
     let mut to_filter = Reader::from_path(second_path).expect("Error opening file.");
     let mut genloci = 0; 
     for gta in to_filter.records(){
-        let mut record = gta.expect("Fail to read record");
+        let record = gta.expect("Fail to read record");
         let gts = record.genotypes().expect("Error reading genotypes");
-        let geno = gts.get(0);
-        match geno[0].index(){
+        let geno1 = gts.get(0);
+        match geno1[0].index(){
             Some(1) => genloci += 1,
             Some(_) => continue,
             None => continue
         };
 
     }
-    println! ("{}", genloci);   
+    println! ("Number of genloci {}", genloci);   
     //let numberofvariants = genloci;  //Stackoverflow with this Number of variants
     let numberofvariants = 5000;
     let genloci = genloci as f32; //convert from usize
     let mut v = Vec::with_capacity(numberofvariants);
-    let wanted_freq = 0.035; // gewuenschte Variantenfrequenz
+    let wanted_freq = 0.022; // gewuenschte Variantenfrequenz
 
     //Vector der Binäries
     for i in 0..numberofvariants {
@@ -86,7 +85,7 @@ fn variantselection(solution: Solution){
     let mut vcf = IndexedReader::from_path(third_path).expect("Error opening file.");
     //let mut to_fetch_from = IndexedReader::from_path(third_path).expect("Error opening file.");
     
-    // creating the output vcf
+   // creating the output vcf
     let head = createheader();
     let mut output = Writer::from_path("Simulationen/test.vcf",&head, true, Format::Vcf).unwrap();
     //Entries that a written into the output
@@ -95,10 +94,11 @@ fn variantselection(solution: Solution){
     let mut index = 0;
     for line in vcf.records() {
         //println!("{:?}", sorted[index]);
-        let mut coluum = line.expect("Problem with coluum");
+        let coluum = line.expect("Problem with coluum");
         let genotypes =  coluum.genotypes().expect("Error reading genotypes");
         let allel_var = genotypes.get(0);
-        if allel_var[0] != rust_htslib::bcf::record::GenotypeAllele::Unphased(1) {
+        //only heterzygotic Variants where the variant is called in CHM1 and the ref is called in CHM13 
+        if allel_var[0] != rust_htslib::bcf::record::GenotypeAllele::Unphased(1) || allel_var[1] != rust_htslib::bcf::record::GenotypeAllele::Phased(0){
             continue;
         }
         if *sorted[index].1 == 1.0 {
