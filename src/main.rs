@@ -9,13 +9,15 @@ use rust_htslib::bcf::*;
 use rand::seq::SliceRandom;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use code::bam_writer::BamWriter;
+use std::time::{Instant};
 
 
 fn main() {
     // Define problem variables
-
+    let now = Instant::now();
     //Number of Loci equals the full length of chr21
-    let path = &"Rohdaten/only21.vcf";
+    let path = &"Rohdaten/filtered.vcf";
     let all21 = Reader::from_path(path).expect("Error opening file.");
     let allheader = all21.header().header_records();
     let mut genloci = 0;
@@ -26,7 +28,7 @@ fn main() {
         };
 
     }
-
+    
     /*//Numberofvariants from the vcf for CHM1
     let second_path = &"Rohdaten/only21.vcf";
     let mut numberofvariants = 0;
@@ -55,7 +57,7 @@ fn main() {
     let mut rng = StdRng::seed_from_u64(1337);
     v.shuffle(&mut rng);
 
-    println!("{:?}", v); //Inhalt des Vectors
+    //println!("{:?}", v); //Inhalt des Vectors
 
     let ref actual_freq = LpContinuous::new("d");
 
@@ -73,17 +75,19 @@ fn main() {
     // Specify solver
     let solver = CbcSolver::new();
 
-    // Run optimisation and process output hashmap
+    // Run optimisation and process output vcf and bam file
     match solver.run(&problem) {
         Ok(solution) => {
             variantselection(solution);
         },
         Err(msg) => println!("{}", msg),
     }
+    let average_time = now.elapsed().as_millis();
+    println!("average_time {} ms", average_time);
 }
 
 
-// select the variants and create the output
+// select the variants and creates the vcf and bam output file
 fn variantselection(solution: Solution){
     println!("in der Funktion");
     println!("Status {:?}", solution.status);
@@ -91,11 +95,12 @@ fn variantselection(solution: Solution){
     sorted.sort_by_key(|a| a.0);
 
     //IndexedReader for fetching
-    let third_path = &"Rohdaten/only21.vcf.gz";
+    let third_path = &"Rohdaten/filtered.vcf.gz";
     let mut vcf = IndexedReader::from_path(third_path).expect("Error opening file.");
     //let mut to_fetch_from = IndexedReader::from_path(third_path).expect("Error opening file.");
     
-   // creating the output vcf
+   // creating the output vcf and bam
+    let bam = BamWriter::new();
     let head = createheader();
     let mut output = Writer::from_path("Simulationen/test.vcf",&head, true, Format::Vcf).unwrap();
     //Entries that a written into the output
@@ -118,7 +123,9 @@ fn variantselection(solution: Solution){
             entries.set_alleles(&coluum.alleles()).expect("Failed to set alleles");
             let alleles = &[allel_var[0], allel_var[1]];
             entries.push_genotypes(alleles).unwrap(); 
-            output.write(&entries).expect("Problem with writing");           
+            output.write(&entries).expect("Problem with writing");
+            //write the bam file
+            bam.write(20, coluum.pos() as i32).unwrap();           
        }
               index += 1;
               //For now because it wont work with the full number of variants
