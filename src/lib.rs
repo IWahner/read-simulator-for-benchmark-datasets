@@ -1,1 +1,1 @@
-pub mod bam_writer;
+pub mod output_writer;

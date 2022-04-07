@@ -9,7 +9,7 @@ use rust_htslib::bcf::*;
 use rand::seq::SliceRandom;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use code::bam_writer::BamWriter;
+use code::output_writer::OutputWriter;
 use std::time::{Instant};
 
 
@@ -78,7 +78,8 @@ fn main() {
     // Run optimisation and process output vcf and bam file
     match solver.run(&problem) {
         Ok(solution) => {
-            variantselection(solution);
+            //variantselection(solution);
+            OutputWriter::new().variantselection(solution);
         },
         Err(msg) => println!("{}", msg),
     }
@@ -87,77 +88,7 @@ fn main() {
 }
 
 
-// select the variants and creates the vcf and bam output file
-fn variantselection(solution: Solution){
-    println!("in der Funktion");
-    println!("Status {:?}", solution.status);
-    let mut sorted: Vec<_> = solution.results.iter().collect();
-    sorted.sort_by_key(|a| a.0);
-
-    //IndexedReader for fetching
-    let third_path = &"Rohdaten/filtered.vcf.gz";
-    let mut vcf = IndexedReader::from_path(third_path).expect("Error opening file.");
-    //let mut to_fetch_from = IndexedReader::from_path(third_path).expect("Error opening file.");
-    
-   // creating the output vcf and bam
-    let bam = BamWriter::new();
-    let head = createheader();
-    let mut output = Writer::from_path("Simulationen/test.vcf",&head, true, Format::Vcf).unwrap();
-    //Entries that a written into the output
-    let mut entries = output.empty_record();
-    //Select the entries from the original vcf
-    let mut index = 0;
-    for line in vcf.records() {
-        //println!("{:?}", sorted[index]);
-        let coluum = line.expect("Problem with coluum");
-        let genotypes =  coluum.genotypes().expect("Error reading genotypes");
-        let allel_var = genotypes.get(0);
-        //only heterzygotic Variants where the variant is called in CHM1 and the ref is called in CHM13 
-        if allel_var[0] != rust_htslib::bcf::record::GenotypeAllele::Unphased(1) || allel_var[1] != rust_htslib::bcf::record::GenotypeAllele::Phased(0){
-            continue;
-        }
-        if *sorted[index].1 == 1.0 {
-            let rid = output.header().name2rid(b"21").unwrap(); //still hardcodes b"21"
-            entries.set_rid(Some(rid));
-            entries.set_pos(coluum.pos());
-            entries.set_alleles(&coluum.alleles()).expect("Failed to set alleles");
-            let alleles = &[allel_var[0], allel_var[1]];
-            entries.push_genotypes(alleles).unwrap(); 
-            output.write(&entries).expect("Problem with writing");
-            //write the bam file
-            bam.write(20, coluum.pos() as i32).unwrap();           
-       }
-              index += 1;
-              //For now because it wont work with the full number of variants
-              if index >= sorted.len(){
-                  break;
-              }
-    }
-    
-    /*Proof of concept for the writer
-    for line in vcf.records(){
-        let mut coluum = line.expect("Problem with coluum");
-        let rid = output.header().name2rid(b"21").unwrap(); //still hardcodes b"21"
-        /*let rid = coluum.rid().expect("Kein rid");*/
-        entries.set_rid(Some(rid));
-        entries.set_pos(coluum.pos());
-
-        let genotypes =  coluum.genotypes().expect("Error reading genotypes");
-        let allel_var = genotypes.get(0);
-        let alleles = &[allel_var[0], allel_var[1]];
-        entries.push_genotypes(alleles).unwrap(); 
-        output.write(&entries).unwrap();
-    }*/
-}
 
 
-//creates the Header for the output vcf
-fn createheader() -> Header {
-    let mut header = Header::new();
-    let header_contig_line = r#"##contig=<ID=21,length=10>"#;
-    header.push_record(header_contig_line.as_bytes());
-    let header_gt_line = r#"##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">"#;
-    header.push_record(header_gt_line.as_bytes());
-    header.push_sample("syndip".as_bytes());
-    header
-}
+
+
