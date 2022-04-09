@@ -10,12 +10,43 @@ use rand::seq::SliceRandom;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use code::output_writer::OutputWriter;
+use code::errors::Error;
 use std::time::{Instant};
+use serde::{Serialize, Deserialize};
+use std::fs::File;
+use std::io::Read as OtherRead;
+
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct SimData {
+    variantfreq: f32,
+    rng_seed: u64,
+}
+
+
 
 
 fn main() {
-    // Define problem variables
+    //time measurment
     let now = Instant::now();
+
+    //reading from the input yaml
+    let filename = &"Rohdaten/test.yml";
+    let mut wanted_freq: f32 = 0.0;
+    let mut seed: u64 = 0;
+    match File::open(filename) {
+        Ok(mut file) => {
+            let mut content = String::new();
+            file.read_to_string(&mut content).unwrap();
+            let input_yml: SimData = serde_yaml::from_str(&content).unwrap();
+            wanted_freq = input_yml.variantfreq;
+            seed = input_yml.rng_seed;
+        }
+        Err(error) => {
+            println!("There is an error {}: {}", filename, error);
+        }
+    }
+    println!("{}", wanted_freq);
     //Number of Loci equals the full length of chr21
     let path = &"Rohdaten/filtered.vcf";
     let all21 = Reader::from_path(path).expect("Error opening file.");
@@ -28,7 +59,7 @@ fn main() {
         };
 
     }
-    
+      
     /*//Numberofvariants from the vcf for CHM1
     let second_path = &"Rohdaten/only21.vcf";
     let mut numberofvariants = 0;
@@ -42,19 +73,18 @@ fn main() {
             Some(_) => continue,
             None => continue
         };
-
+        //Stackoverflow with this Number of variants
     }*/
     println! ("Number of genloci {}", genloci);   
-    //let numberofvariants = genloci;  //Stackoverflow with this Number of variants
     let numberofvariants = 10000;
     let mut v = Vec::with_capacity(numberofvariants);
-    let wanted_freq = 0.0001; // gewuenschte Variantenfrequenz
+    //let wanted_freq = 0.001; // wanted variant frequency
 
     //Vector der Binäries
     for i in 0..numberofvariants {
         v.push(LpBinary::new(&("x".to_owned()+&i.to_string())));
     }
-    let mut rng = StdRng::seed_from_u64(1337);
+    let mut rng = StdRng::seed_from_u64(seed);
     v.shuffle(&mut rng);
 
     //println!("{:?}", v); //Inhalt des Vectors
@@ -78,7 +108,6 @@ fn main() {
     // Run optimisation and process output vcf and bam file
     match solver.run(&problem) {
         Ok(solution) => {
-            //variantselection(solution);
             OutputWriter::new().variantselection(solution);
         },
         Err(msg) => println!("{}", msg),

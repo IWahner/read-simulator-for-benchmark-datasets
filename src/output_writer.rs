@@ -29,7 +29,6 @@ impl OutputWriter{
 
     // select the variants and creates the vcf and bam output file
     pub fn variantselection(&self, solution: Solution){
-        println!("in der Funktion");
         println!("Status {:?}", solution.status);
         let mut sorted: Vec<_> = solution.results.iter().collect();
         sorted.sort_by_key(|a| a.0);
@@ -54,7 +53,7 @@ impl OutputWriter{
         //for some reason you get reads from chr21, when you use 20 to fetch them
         let chr = 20 as i32;
         for line in vcf.records() {
-            println!("{:?}", sorted[index]);
+            //println!("{:?}", sorted[index]);
             let coluum = line.expect("Problem with coluum");
             let genotypes =  coluum.genotypes().expect("Error reading genotypes");
             let allel_var = genotypes.get(0);
@@ -75,8 +74,7 @@ impl OutputWriter{
                 bam_read.fetch((chr, position-500, position+500)).expect("Fehler!!!"); 
                 for read in bam_read.rc_records() {
                     let record = read.unwrap();
-                    out.write(&record).unwrap();
-                //bam.write(20, coluum.pos() as i32).unwrap();           
+                    out.write(&record).unwrap();         
                 }
             }
             index += 1;
@@ -91,7 +89,8 @@ impl OutputWriter{
     //creates the Header for the output vcf
     pub fn createheader(&self) -> OtherHeader {
         let mut header = OtherHeader::new();
-        let header_contig_line = r#"##contig=<ID=21,length=10>"#;
+        let header_contig_line = r#"##contig=<ID=21,length=46709983>"#;
+        println! ("{}", header_contig_line);
         header.push_record(header_contig_line.as_bytes());
         let header_gt_line = r#"##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">"#;
         header.push_record(header_gt_line.as_bytes());
