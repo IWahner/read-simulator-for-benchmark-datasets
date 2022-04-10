@@ -24,8 +24,6 @@ struct SimData {
 }
 
 
-
-
 fn main() {
     //time measurment
     let now = Instant::now();
@@ -76,9 +74,8 @@ fn main() {
         //Stackoverflow with this Number of variants
     }*/
     println! ("Number of genloci {}", genloci);   
-    let numberofvariants = 10000;
+    let numberofvariants = 20000;
     let mut v = Vec::with_capacity(numberofvariants);
-    //let wanted_freq = 0.001; // wanted variant frequency
 
     //Vector der Binäries
     for i in 0..numberofvariants {
@@ -108,7 +105,7 @@ fn main() {
     // Run optimisation and process output vcf and bam file
     match solver.run(&problem) {
         Ok(solution) => {
-            OutputWriter::new().variantselection(solution);
+            OutputWriter::new().variantselection(solution, genloci, 21);
         },
         Err(msg) => println!("{}", msg),
     }

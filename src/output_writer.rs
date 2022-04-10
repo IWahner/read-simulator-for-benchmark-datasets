@@ -28,7 +28,7 @@ impl OutputWriter{
     }
 
     // select the variants and creates the vcf and bam output file
-    pub fn variantselection(&self, solution: Solution){
+    pub fn variantselection(&self, solution: Solution, length: i32, chr: i32){
         println!("Status {:?}", solution.status);
         let mut sorted: Vec<_> = solution.results.iter().collect();
         sorted.sort_by_key(|a| a.0);
@@ -38,7 +38,7 @@ impl OutputWriter{
         let mut vcf = OtherIndexedReader::from_path(third_path).expect("Error opening file.");
         
     // creating the output vcf and bam
-        let head_vcf = self.createheader();
+        let head_vcf = self.createheader(length, chr);
         let mut output = OtherWriter::from_path("Simulationen/test.vcf",&head_vcf, true, OtherFormat::Vcf).unwrap();
     
         let mut bam_read = IndexedReader::from_path(&"Rohdaten/inchr21.bam").unwrap();
@@ -88,9 +88,9 @@ impl OutputWriter{
     
        
     //creates the Header for the output vcf
-    pub fn createheader(&self) -> OtherHeader {
+    pub fn createheader(&self, length: i32, chr: i32) -> OtherHeader {
         let mut header = OtherHeader::new();
-        let header_contig_line = r#"##contig=<ID=21,length=46709983>"#;
+        let header_contig_line = format!("##contig=<ID={},length={}>", chr, length); 
         println! ("{}", header_contig_line);
         header.push_record(header_contig_line.as_bytes());
         let header_gt_line = r#"##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">"#;
