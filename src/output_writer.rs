@@ -51,7 +51,8 @@ impl OutputWriter{
         //Select the entries from the original vcf
         let mut index = 0;
         //for some reason you get reads from chr21, when you use 20 to fetch them
-        let chr = 20 as i32;
+        let chr = 20_i32;
+        println!("{:?}", sorted[index]);
         for line in vcf.records() {
             //println!("{:?}", sorted[index]);
             let coluum = line.expect("Problem with coluum");
