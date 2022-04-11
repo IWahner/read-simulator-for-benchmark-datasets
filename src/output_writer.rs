@@ -1,4 +1,5 @@
 use lp_modeler::solvers::Solution;
+use std::collections::HashMap;
 use rust_htslib::bam::IndexedReader;
 use rust_htslib::bam::Header;
 use rust_htslib::bam::Writer;
@@ -28,10 +29,11 @@ impl OutputWriter{
     }
 
     // select the variants and creates the vcf and bam output file
-    pub fn variantselection(&self, solution: Solution, length: i32, chr: i32){
-        println!("Status {:?}", solution.status);
-        let mut sorted: Vec<_> = solution.results.iter().collect();
+    pub fn variantselection(&self, solution: HashMap<String, f32>, length: i32, chr: i32){
+        //println!("Status {:?}", solution.status);
+        let mut sorted: Vec<_> = solution.iter().collect();
         sorted.sort_by_key(|a| a.0);
+        //solution.sort_by_key(|a| a.0);
 
         //IndexedReader for fetching
         let third_path = &"Rohdaten/filtered.vcf.gz";
@@ -52,7 +54,7 @@ impl OutputWriter{
         let mut index = 0;
         //for some reason you get reads from chr21, when you use 20 to fetch them
         let chr = 20_i32;
-        println!("{:?}", sorted[index]);
+        //println!("{:?}", sorted[index]);
         for line in vcf.records() {
             //println!("{:?}", sorted[index]);
             let coluum = line.expect("Problem with coluum");
@@ -80,7 +82,7 @@ impl OutputWriter{
             }
             index += 1;
                 //For now because it wont work with the full number of variants
-            if index >= sorted.len(){
+            if index >= solution.len(){
                 break;
             }
         }

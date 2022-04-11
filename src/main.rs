@@ -15,6 +15,7 @@ use std::time::{Instant};
 use serde::{Serialize, Deserialize};
 use std::fs::File;
 use std::io::Read as OtherRead;
+use std::collections::HashMap;
 
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -58,9 +59,9 @@ fn main() {
 
     }
       
-    /*//Numberofvariants from the vcf for CHM1
+    //Numberofvariants from the vcf for CHM1
     let second_path = &"Rohdaten/only21.vcf";
-    let mut numberofvariants = 0;
+    let mut numberofvariants: i32 = 0;
     let mut to_filter = Reader::from_path(second_path).expect("Error opening file.");
     for gta in to_filter.records(){
         let record = gta.expect("Fail to read record");
@@ -72,43 +73,58 @@ fn main() {
             None => continue
         };
         //Stackoverflow with this Number of variants
-    }*/
-    println! ("Number of genloci {}", genloci);   
-    let numberofvariants = 20000;
-    let mut v = Vec::with_capacity(numberofvariants);
-
-    //Vector der Binäries
-    for i in 0..numberofvariants {
-        v.push(LpBinary::new(&("x".to_owned()+&i.to_string())));
     }
-    let mut rng = StdRng::seed_from_u64(seed);
-    v.shuffle(&mut rng);
+    let mut sol = HashMap::new();
+    let mut beginning = 0; 
+    println! ("Number of genloci {}", genloci);
+    //TODO wanted_frequenzy must be modified for the partial problems
+    while numberofvariants > 0 {   
+        //tested, solvers works with 20000 variables
+        let partialnumber: i32 = if numberofvariants >= 20000 {
+            20000
+        }
+        else {
+            numberofvariants
+        };
+        numberofvariants -= 20000; 
+        let mut v = Vec::with_capacity(partialnumber.try_into().unwrap());
+        let end = beginning + partialnumber;
+        //Vector der Binäries
+        for i in beginning..end {
+            v.push(LpBinary::new(&("x".to_owned()+&i.to_string())));
+        }
+        let mut rng = StdRng::seed_from_u64(seed);
+        v.shuffle(&mut rng);
 
-    //println!("{:?}", v); //Inhalt des Vectors
+        beginning += partialnumber;
+        //println!("{:?}", v); //Inhalt des Vectors
 
-    let ref actual_freq = LpContinuous::new("d");
+        let ref actual_freq = LpContinuous::new("d");
 
-    // Define problem and objective sense
-    let mut problem = LpProblem::new("One Problem", LpObjective::Minimize);
+        // Define problem and objective sense
+        let mut problem = LpProblem::new("One Problem", LpObjective::Minimize);
 
-    // Objective Function: Minimize ds - Ds
-    problem += actual_freq - wanted_freq;
+        // Objective Function: Minimize ds - Ds
+        problem += actual_freq - wanted_freq;
 
-    // Constraint:
-    problem += lp_sum(&v).equal(actual_freq*genloci);
+        // Constraint:
+        problem += lp_sum(&v).equal(actual_freq*genloci);
+        
+        problem += constraint!(actual_freq - wanted_freq >= 0);
     
-    problem += constraint!(actual_freq - wanted_freq >= 0);
- 
-    // Specify solver
-    let solver = CbcSolver::new();
+        // Specify solver
+        let solver = CbcSolver::new();
 
-    // Run optimisation and process output vcf and bam file
-    match solver.run(&problem) {
-        Ok(solution) => {
-            OutputWriter::new().variantselection(solution, genloci, 21);
-        },
-        Err(msg) => println!("{}", msg),
+        // Run optimisation and process output vcf and bam file
+        match solver.run(&problem) {
+            Ok(solution) => {
+                println!("Status {:?}", solution.status);
+                sol.extend(solution.results)
+            },
+            Err(msg) => println!("{}", msg),
+        }
     }
+    OutputWriter::new().variantselection(sol, genloci, 21);
     let average_time = now.elapsed().as_millis();
     println!("average_time {} ms", average_time);
 }
