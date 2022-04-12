@@ -33,7 +33,6 @@ impl OutputWriter{
         //println!("Status {:?}", solution.status);
         let mut sorted: Vec<_> = solution.iter().collect();
         sorted.sort_by_key(|a| a.0);
-        //solution.sort_by_key(|a| a.0);
 
         //IndexedReader for fetching
         let third_path = &"Rohdaten/filtered.vcf.gz";
@@ -54,7 +53,7 @@ impl OutputWriter{
         let mut index = 0;
         //for some reason you get reads from chr21, when you use 20 to fetch them
         let chr = 20_i32;
-        //println!("{:?}", sorted[index]);
+        println!("{:?}", sorted[index]);
         for line in vcf.records() {
             //println!("{:?}", sorted[index]);
             let coluum = line.expect("Problem with coluum");
@@ -65,6 +64,7 @@ impl OutputWriter{
                 continue;
             }
             if *sorted[index].1 == 1.0 {
+                //println!("{:?}", sorted[index]);
                 let rid = output.header().name2rid(b"21").unwrap(); //still hardcodes b"21"
                 entries.set_rid(Some(rid));
                 let position = coluum.pos();

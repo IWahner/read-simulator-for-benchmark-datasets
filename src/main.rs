@@ -75,9 +75,10 @@ fn main() {
         //Stackoverflow with this Number of variants
     }
     let mut sol = HashMap::new();
-    let mut beginning = 0; 
+    let mut beginning: i32 = 0;
+    let for_calculation = numberofvariants as f32; 
     println! ("Number of genloci {}", genloci);
-    //TODO wanted_frequenzy must be modified for the partial problems
+    //TODO gen_loci must be modified for the partial problems
     while numberofvariants > 0 {   
         //tested, solvers works with 20000 variables
         let partialnumber: i32 = if numberofvariants >= 20000 {
@@ -86,7 +87,10 @@ fn main() {
         else {
             numberofvariants
         };
-        numberofvariants -= 20000; 
+        //let fraction = partialnumber as f32;
+        let partial_genloci = genloci as f32 *(partialnumber as f32/for_calculation);
+        println!("partial_gen: {}", partial_genloci);
+        numberofvariants -= 20000;
         let mut v = Vec::with_capacity(partialnumber.try_into().unwrap());
         let end = beginning + partialnumber;
         //Vector der Binäries
@@ -108,7 +112,7 @@ fn main() {
         problem += actual_freq - wanted_freq;
 
         // Constraint:
-        problem += lp_sum(&v).equal(actual_freq*genloci);
+        problem += lp_sum(&v).equal(actual_freq*partial_genloci);
         
         problem += constraint!(actual_freq - wanted_freq >= 0);
     
