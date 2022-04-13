@@ -1,4 +1,3 @@
-use lp_modeler::solvers::Solution;
 use std::collections::HashMap;
 use rust_htslib::bam::IndexedReader;
 use rust_htslib::bam::Header;
@@ -29,6 +28,7 @@ impl OutputWriter{
     }
 
     // select the variants and creates the vcf and bam output file
+    //TODO length and chr as Vec of tuple
     pub fn variantselection(&self, solution: HashMap<String, f32>, length: i32, chr: i32){
         //println!("Status {:?}", solution.status);
         let mut sorted: Vec<_> = solution.iter().collect();
@@ -52,7 +52,7 @@ impl OutputWriter{
         //Select the entries from the original vcf
         let mut index = 0;
         //for some reason you get reads from chr21, when you use 20 to fetch them
-        let chr = 20_i32;
+        let fetch_chr = chr-1;
         println!("{:?}", sorted[index]);
         for line in vcf.records() {
             //println!("{:?}", sorted[index]);
@@ -74,7 +74,7 @@ impl OutputWriter{
                 entries.push_genotypes(alleles).unwrap(); 
                 output.write(&entries).expect("Problem with writing");
                 //write the bam file
-                bam_read.fetch((chr, position-500, position+500)).expect("Fehler!!!"); 
+                bam_read.fetch((fetch_chr, position-500, position+500)).expect("Fehler!!!"); 
                 for read in bam_read.rc_records() {
                     let record = read.unwrap();
                     out.write(&record).unwrap();         

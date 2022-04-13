@@ -4,13 +4,13 @@ use lp_modeler::solvers::{CbcSolver, SolverTrait};
 use lp_modeler::dsl::*;
 use lp_modeler::constraint;
 use lp_modeler::dsl::variables::lp_sum;
-use lp_modeler::solvers::Solution;
 use rust_htslib::bcf::*;
 use rand::seq::SliceRandom;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use code::output_writer::OutputWriter;
-use code::errors::Error;
+//use code::errors::Error;
+use code::greedy_solver::GreedySolver;
 use std::time::{Instant};
 use serde::{Serialize, Deserialize};
 use std::fs::File;
@@ -72,13 +72,13 @@ fn main() {
             Some(_) => continue,
             None => continue
         };
-        //Stackoverflow with this Number of variants
     }
+    // ab hier ins neue Modul, kriegt seed, frequenz, genloci und numberofvariants
     let mut sol = HashMap::new();
     let mut beginning: i32 = 0;
     let for_calculation = numberofvariants as f32; 
     println! ("Number of genloci {}", genloci);
-    //TODO gen_loci must be modified for the partial problems
+    GreedySolver::new().variantselection(genloci, numberofvariants, wanted_freq);
     while numberofvariants > 0 {   
         //tested, solvers works with 20000 variables
         let partialnumber: i32 = if numberofvariants >= 20000 {
@@ -93,7 +93,7 @@ fn main() {
         numberofvariants -= 20000;
         let mut v = Vec::with_capacity(partialnumber.try_into().unwrap());
         let end = beginning + partialnumber;
-        //Vector der Binäries
+        //Vector of binaries
         for i in beginning..end {
             v.push(LpBinary::new(&("x".to_owned()+&i.to_string())));
         }
