@@ -8,7 +8,7 @@ impl Default for GreedySolver {
     fn default() -> Self {
          Self::new()
       }
-  }
+}
  
 impl GreedySolver{
  
@@ -35,7 +35,7 @@ impl GreedySolver{
             //println!("num: {}", num);
             if num <= cut_off as i32 {
                 sol.insert("x".to_owned()+&i.to_string(), 1.0);
-                break_condition = break_condition - 1.0;
+                break_condition -= - 1.0;
             }
             else {
                 sol.insert("x".to_owned()+&i.to_string(), 0.0);
@@ -43,7 +43,7 @@ impl GreedySolver{
         }
         let mut sum_of_ones = 0.0;
         for key in sol.values(){
-            sum_of_ones = sum_of_ones + key;
+            sum_of_ones += key;
         }
         println!("Sum_of_ones: {}", sum_of_ones);
         println!("Länge: {}", sol.len());

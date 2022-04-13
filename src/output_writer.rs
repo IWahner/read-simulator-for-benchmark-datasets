@@ -29,7 +29,7 @@ impl OutputWriter{
 
     // select the variants and creates the vcf and bam output file
     //TODO length and chr as Vec of tuple
-    pub fn variantselection(&self, solution: HashMap<String, f32>, length: i32, chr: i32){
+    pub fn write_output(&self, solution: HashMap<String, f32>, length: i32, chr: i32){
         //println!("Status {:?}", solution.status);
         let mut sorted: Vec<_> = solution.iter().collect();
         sorted.sort_by_key(|a| a.0);

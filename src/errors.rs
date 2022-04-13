@@ -7,5 +7,8 @@ pub enum Error {
     FileNotFound { path: PathBuf },
 
     #[error("failed solving the problem")]
-    SolverProblem,
+    SolvingProblem,
+
+    #[error("wrong input for solver")]
+    SolverInputProblem,
 }
