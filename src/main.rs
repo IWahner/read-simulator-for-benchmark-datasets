@@ -25,9 +25,9 @@ fn main() -> Result<(), Error>{
 
     //reading from the input yaml
     let filename = &"Rohdaten/test.yml";
-    let mut wanted_freq: f32 = 0.0;
-    let mut seed: u64 = 0;
-    let mut solver: String = String::new();
+    let wanted_freq: f32;
+    let seed: u64;
+    let solver: String;
     match File::open(filename) {
         Ok(mut file) => {
             let mut content = String::new();
@@ -37,9 +37,12 @@ fn main() -> Result<(), Error>{
             seed = input_yml.rng_seed;
             solver = input_yml.solver;
         }
-        Err(error) => {
-            println!("There is an error {}: {}", filename, error);
+        Err(_) => {
+            return Err(Error::FileNotFound);
         }
+    }
+    if wanted_freq > 1.0 || wanted_freq < 0.0 {
+        return Err(Error::InvalidFrequency);
     }
     println!("{}", wanted_freq);
     //Number of Loci equals the full length of chr21
@@ -52,7 +55,6 @@ fn main() -> Result<(), Error>{
             HeaderRecord::Contig{values, ..} => values.get("length").unwrap().parse().unwrap(),
             _ => continue,
         };
-
     }
       
     //Numberofvariants from the vcf for CHM1
@@ -70,7 +72,7 @@ fn main() -> Result<(), Error>{
         };
     }
     println! ("Number of genloci {}", genloci);
-    let mut sol: HashMap<String, f32> = HashMap::new();
+    let sol: HashMap<String, f32>;
     if solver.eq("linear") {
          sol = LinearSolver::new().variantselection(genloci, numberofvariants, wanted_freq, seed);
     }
