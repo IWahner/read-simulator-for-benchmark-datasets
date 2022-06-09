@@ -35,7 +35,7 @@ impl OutputWriter{
         sorted.sort_by_key(|a| a.0);
 
         //IndexedReader for fetching
-        let third_path = &"Rohdaten/filtered.vcf.gz";
+        let third_path = &"Rohdaten/filteredonlychm1.vcf.gz";
         let mut vcf = OtherIndexedReader::from_path(third_path).expect("Error opening file.");
         
     // creating the output vcf and bam

@@ -46,7 +46,7 @@ fn main() -> Result<(), Error>{
     }
     println!("{}", wanted_freq);
     //Number of Loci equals the full length of chr21
-    let path = &"Rohdaten/filtered.vcf";
+    let path = &"Rohdaten/filteredonlychm1.vcf";
     let all21 = Reader::from_path(path).expect("Error opening file.");
     let allheader = all21.header().header_records();
     let mut genloci = 0;
@@ -58,7 +58,7 @@ fn main() -> Result<(), Error>{
     }
       
     //Numberofvariants from the vcf for CHM1
-    let second_path = &"Rohdaten/only21.vcf";
+    let second_path = &"Rohdaten/filteredonlychm1.vcf";
     let mut numberofvariants: i32 = 0;
     let mut to_filter = Reader::from_path(second_path).expect("Error opening file.");
     for gta in to_filter.records(){
