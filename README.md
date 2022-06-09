@@ -30,6 +30,7 @@ samtools index inchr21.bam
 Für den Testlauf eine YAML-Datei in \Rohdaten mit dem namen test.yml erstellen.
 
 Das Eingabeformat lautet:
+  
 variantfreq: f32
 
 rng_seed: u64
