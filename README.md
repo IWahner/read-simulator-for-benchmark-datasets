@@ -1,5 +1,5 @@
 # simulator-for-benchmark-datasets
-Bachelorthesis. Prototyp für Simulation für synthetische genomischen Benchmarkdatensätzen
+Bachelorthesis. Prototyp für Simulatior von synthetischen genomischen Benchmarkdatensätzen
 
 # Testen
 Für das Testen bitte die Rohdaten in einem Unterordner /Rohdaten bereitstellen. Benötigt werden eine VCF-Datei filteredonlychm21.vcf bzw. komprimiert und indixiert filteredonlychm21.vcf.gz.
@@ -17,7 +17,6 @@ Die dabei generierte VCF-Datei nennt man dann filteredonlychm21 und nachdem sie 
 bgzip -c filteredonlychm21.vcf > filteredonlychm21.vcf.gz
 
 vcftools index filteredonlychm21.vcf.gz 
-
 
 Die BAM-Datei kann mittels Samtools view heruntergeladen und auf Chr21 beschränkt werden: 
 
